@@ -7,8 +7,8 @@ import (
 	"github.com/slack-go/slack/slackevents"
 )
 
-func getFormattedMessage(reactedBy string, reactedTo string, reactedMessage string) string {
-	return fmt.Sprintf("%s: \"%s\" \n- @%s", reactedBy, reactedMessage, reactedTo)
+func getFormattedMessage(reactedTo string, reactedMessage string) string {
+	return fmt.Sprintf("\"%s\" \n- @%s", reactedMessage, reactedTo)
 }
 
 func messageIsReactedMessage(emoji string, timestamp string, message slack.Message) bool {
@@ -54,23 +54,20 @@ func getReactedMessage(slackInstance *slack.Client, reactionEmoji string, reacti
 
 // PostReactedMessageToChannel is the function used to post a reaction
 func PostReactedMessageToChannel(slackInstance *slack.Client, allUsers map[string]SlackUser, reactionEvent *slackevents.ReactionAddedEvent) {
-	reactedBy := reactionEvent.User
-	reactedByName := GetUsernameUserID(allUsers, reactedBy)
-	reactedTo := reactionEvent.ItemUser
-	reactedToName := GetUsernameUserID(allUsers, reactedTo)
+	reactedByUser := GetUserByUserID(allUsers, reactionEvent.User)
+	reactedByName := reactedByUser.DisplayName
+	reactedToUser := GetUserByUserID(allUsers, reactionEvent.ItemUser)
+	reactedToName := reactedToUser.Username
 
 	reactionEmoji := reactionEvent.Reaction
 	registeredReaction := GetRegisteredReaction(reactionEmoji)
 	channelToPostReaction := registeredReaction.Channel
 	reactionType := registeredReaction.Name
-	reactionBotName := registeredReaction.BotName
-	reactionBotIcon := registeredReaction.BotIconEmoji
 	reactionItem := reactionEvent.Item
 	reactedMessage := getReactedMessage(slackInstance, reactionEmoji, reactionItem)
 	reactedMessageText := reactedMessage.Text
 	reactedMessageFiles := reactedMessage.Files
 	reactionAttachments := slack.Attachment{}
-
 	if len(reactedMessageFiles) > 0 {
 		// In case someone decides to add a bunch of photos, we're going to limit them to one
 		firstReactedFile := reactedMessage.Files[0]
@@ -82,19 +79,23 @@ func PostReactedMessageToChannel(slackInstance *slack.Client, allUsers map[strin
 		if reactedMessageText == "" {
 			reactedMessageText = ":camera:"
 		}
-
 	}
 
-	reactedMessageTextFormatted := getFormattedMessage(reactedByName, reactedToName, reactedMessageText)
+	reactedMessageTextFormatted := getFormattedMessage(reactedToName, reactedMessageText)
+
+	reactedMessageBlock := slack.NewTextBlockObject("mrkdwn", reactedMessageTextFormatted, false, false)
+	blocks := []slack.Block{
+		slack.NewSectionBlock(reactedMessageBlock, nil, nil),
+	}
 
 	_, _, err := slackInstance.PostMessage(
 		channelToPostReaction,
-		slack.MsgOptionText(reactedMessageTextFormatted, false),
+		slack.MsgOptionBlocks(blocks...),
 		slack.MsgOptionAttachments(reactionAttachments),
 		slack.MsgOptionAsUser(false),
-		slack.MsgOptionIconEmoji(reactionBotIcon),
-		slack.MsgOptionDisableMarkdown(),
-		slack.MsgOptionUsername(reactionBotName),
+		slack.MsgOptionIconURL(reactedByUser.ProfileImage),
+		slack.MsgOptionParse(true),
+		slack.MsgOptionUsername(reactedByName),
 	)
 
 	if err != nil {

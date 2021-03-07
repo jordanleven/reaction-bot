@@ -10,26 +10,20 @@ type RegisteredReaction struct {
 
 var registeredReactions = map[string]RegisteredReaction{
 	"laughing": {
-		Name:         "Randomness",
-		BotName:      "Mr. Randomness",
-		BotIconEmoji: ":laughing:",
-		Channel:      "random",
+		Name:    "Randomness",
+		Channel: "random",
 	},
 	"bulb": {
-		Name:         "Today I learned",
-		BotName:      "TIL Bot",
-		BotIconEmoji: ":bulb:",
-		Channel:      "til",
+		Name:    "Today I learned",
+		Channel: "til",
 	},
 }
 
 var developmentReaction = map[string]RegisteredReaction{
 	// The registered emoji on development reactions should be obscure, less frequently used emoji.
 	"white_check_mark": {
-		Name:         "Reaction Bot Testing",
-		BotName:      "Reaction Bot Development",
-		BotIconEmoji: ":test_tube:",
-		Channel:      "reaction-bot-testing",
+		Name:    "Reaction Bot Testing",
+		Channel: "reaction-bot-testing",
 	},
 }
 

@@ -9,10 +9,6 @@ In `internal/reactions.go`, you may register an unlimited number of emoji reacti
 ```go
   // The name of the bot reaction. This is only used when logging reactions on the server.
   Name         string
-  // The username of the bot when posting the reaction to te channel.
-  BotName      string
-  // The emoji of the bot when posting the reaction to the channel.
-  BotIconEmoji string
   // The channel to post the reaction to.
   Channel      string
 ```
@@ -22,8 +18,6 @@ When registered in `registeredReactions`, a bot named "Mr. Randomness" with that
 ```go
 "laughing": {
   Name:         "Randomness",
-  BotName:      "Mr. Randomness",
-  BotIconEmoji: ":joy:",
   Channel:      "random",
 },
 ```
