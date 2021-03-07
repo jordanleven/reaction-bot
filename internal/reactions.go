@@ -1,36 +1,37 @@
 package internal
 
-type reactionChannels struct {
-	Name    string
-	Channel string
+//RegisteredReaction are all emoji that are registered to a channel
+type RegisteredReaction struct {
+	Name         string
+	BotName      string
+	BotIconEmoji string
+	Channel      string
 }
 
-var registeredReactions = map[string]reactionChannels{
+var registeredReactions = map[string]RegisteredReaction{
 	"laughing": {
-		Name:    "Randomness",
-		Channel: "random",
+		Name:         "Randomness",
+		BotName:      "Mr. Randomness",
+		BotIconEmoji: ":laughing:",
+		Channel:      "random",
 	},
 	"bulb": {
-		Name:    "Today I learned",
-		Channel: "til",
+		Name:         "Today I learned",
+		BotName:      "TIL Bot",
+		BotIconEmoji: ":bulb:",
+		Channel:      "til",
 	},
 }
 
-func getRegisteredReactionByEmoji(emoji string) (reactionChannels, bool) {
+func getRegisteredReactionByEmoji(emoji string) (RegisteredReaction, bool) {
 	registeredReaction, registeredReactionWasFound := registeredReactions[emoji]
 	return registeredReaction, registeredReactionWasFound
 }
 
-// GetReactionChannelByReaction returns the name of the channel for a specific reaction
-func GetReactionChannelByReaction(emoji string) string {
-	registeredReaction, _ := getRegisteredReactionByEmoji(emoji)
-	return registeredReaction.Channel
-}
-
-// GetReactionTypeByEmoji returns the name of the type of reaction
-func GetReactionTypeByEmoji(emoji string) string {
-	registeredReaction, _ := getRegisteredReactionByEmoji(emoji)
-	return registeredReaction.Name
+// GetRegisteredReaction returns true if the reaction emoji has been registered
+func GetRegisteredReaction(emoji string) RegisteredReaction {
+	reaction, _ := getRegisteredReactionByEmoji(emoji)
+	return reaction
 }
 
 // ReactionIsRegistered returns true if the reaction emoji has been registered

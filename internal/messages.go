@@ -25,7 +25,8 @@ func messageIsReactedMessage(emoji string, timestamp string, message slack.Messa
 	return messageTimestamp == timestamp && messageHasCorrectReaction
 }
 
-func getReactedMessageText(slackInstance *slack.Client, reactionEmoji string, reactionItem slackevents.Item) string {
+func getReactedMessage(slackInstance *slack.Client, reactionEmoji string, reactionItem slackevents.Item) slack.Message {
+	var reactedMessage slack.Message
 	timestamp := reactionItem.Timestamp
 	channelID := reactionItem.Channel
 	payload := slack.GetConversationRepliesParameters{
@@ -34,19 +35,16 @@ func getReactedMessageText(slackInstance *slack.Client, reactionEmoji string, re
 		// Required to show messages that are at the limit of the timestamp
 		Inclusive: true,
 	}
-
 	conversationHistory, _, _, _ := slackInstance.GetConversationReplies(&payload)
 
 	messageTextFound := false
 	conversationHistoryLength := len(conversationHistory)
 	index := 0
-	reactedMessage := ""
 	for !messageTextFound && index < conversationHistoryLength {
 		for messageIndex, message := range conversationHistory {
-			messageText := message.Text
 			if messageIsReactedMessage(reactionEmoji, timestamp, message) {
 				messageTextFound = true
-				reactedMessage = messageText
+				reactedMessage = message
 			}
 			index = messageIndex
 		}
@@ -62,22 +60,46 @@ func PostReactedMessageToChannel(slackInstance *slack.Client, allUsers map[strin
 	reactedToName := GetUsernameUserID(allUsers, reactedTo)
 
 	reactionEmoji := reactionEvent.Reaction
-	channelToPostReaction := GetReactionChannelByReaction(reactionEmoji)
-	reactionType := GetReactionTypeByEmoji(reactionEmoji)
+	registeredReaction := GetRegisteredReaction(reactionEmoji)
+	channelToPostReaction := registeredReaction.Channel
+	reactionType := registeredReaction.Name
+	reactionBotName := registeredReaction.BotName
+	reactionBotIcon := registeredReaction.BotIconEmoji
 	reactionItem := reactionEvent.Item
-	reactedMessageText := getReactedMessageText(slackInstance, reactionEmoji, reactionItem)
-	channelPostReactionMessage := getFormattedMessage(reactedByName, reactedToName, reactedMessageText)
+	reactedMessage := getReactedMessage(slackInstance, reactionEmoji, reactionItem)
+	reactedMessageText := reactedMessage.Text
+	reactedMessageFiles := reactedMessage.Files
+	reactionAttachments := slack.Attachment{}
+
+	if len(reactedMessageFiles) > 0 {
+		// In case someone decides to add a bunch of photos, we're going to limit them to one
+		firstReactedFile := reactedMessage.Files[0]
+		reactionAttachments.ImageURL = firstReactedFile.Permalink
+		reactionAttachments.Text = " "
+
+		// If a user just posted an image, update the message text to be an empty string (the API
+		// requires us to post a non-null string)
+		if reactedMessageText == "" {
+			reactedMessageText = ":camera:"
+		}
+
+	}
+
+	reactedMessageTextFormatted := getFormattedMessage(reactedByName, reactedToName, reactedMessageText)
 
 	_, _, err := slackInstance.PostMessage(
 		channelToPostReaction,
-		slack.MsgOptionText(channelPostReactionMessage, false),
-		slack.MsgOptionAttachments(),
-		slack.MsgOptionAsUser(true),
+		slack.MsgOptionText(reactedMessageTextFormatted, false),
+		slack.MsgOptionAttachments(reactionAttachments),
+		slack.MsgOptionAsUser(false),
+		slack.MsgOptionIconEmoji(reactionBotIcon),
+		slack.MsgOptionDisableMarkdown(),
+		slack.MsgOptionUsername(reactionBotName),
 	)
 
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		return
 	}
-	fmt.Printf("Successfully sent a \"%s\" reaction to the %s channel.", reactionType, channelToPostReaction)
+	fmt.Printf("Successfully sent a \"%s\" reaction to the %s channel.\n", reactionType, channelToPostReaction)
 }
