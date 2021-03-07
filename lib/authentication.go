@@ -2,7 +2,6 @@ package lib
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -24,10 +23,7 @@ func getEnvironmentalVariable(variableName string, environmentalVariablePrefix s
 }
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	godotenv.Load()
 }
 
 // GetSlackTokenApp returns the Slack bot token set in the

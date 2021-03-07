@@ -1,0 +1,46 @@
+name: Release Production Build
+
+on:
+  push:
+    tags:
+      - "v[0-9].[0-9].[0-9](?!-[0-9])"
+
+jobs:
+  deploy:
+    name: Release Production Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.13.1'
+
+    - name: Build binary
+      run: go build
+
+    - name: Move built file
+      run: mv reaction-bot reaction-bot-built
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Reaction Bot ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.12
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: "jl-reaction-bot"
+        heroku_email: ${{ secrets.USER_EMAIL }}
