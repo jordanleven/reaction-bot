@@ -23,8 +23,28 @@ var registeredReactions = map[string]RegisteredReaction{
 	},
 }
 
+var developmentReaction = map[string]RegisteredReaction{
+	// The registered emoji on development reactions should be obscure, less frequently used emoji.
+	"white_check_mark": {
+		Name:         "Reaction Bot Testing",
+		BotName:      "Reaction Bot Development",
+		BotIconEmoji: ":test_tube:",
+		Channel:      "reaction-bot-testing",
+	},
+}
+
 func getRegisteredReactionByEmoji(emoji string) (RegisteredReaction, bool) {
-	registeredReaction, registeredReactionWasFound := registeredReactions[emoji]
+	var registeredEmojiSet map[string]RegisteredReaction
+
+	// If we're working locally, we'll load our developmentReaction set to avoid issue posting
+	// reactions to production channels
+	if isDevelopmentEnvironment() {
+		registeredEmojiSet = developmentReaction
+	} else {
+		registeredEmojiSet = registeredReactions
+	}
+
+	registeredReaction, registeredReactionWasFound := registeredEmojiSet[emoji]
 	return registeredReaction, registeredReactionWasFound
 }
 

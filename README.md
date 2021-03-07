@@ -2,6 +2,32 @@
 
 A simple bot that can listen for reactions with specific emoji in Slack.
 
+## Configuring Reaction Bot
+
+In `internal/reactions.go`, you may register an unlimited number of emoji reactions in `registeredReactions`. When the emoji identified as the key is used in any channel where Reaction Bot is added, the message will be posted to the identified channel.
+
+```go
+  // The name of the bot reaction. This is only used when logging reactions on the server.
+  Name         string
+  // The username of the bot when posting the reaction to te channel.
+  BotName      string
+  // The emoji of the bot when posting the reaction to the channel.
+  BotIconEmoji string
+  // The channel to post the reaction to.
+  Channel      string
+```
+
+When registered in `registeredReactions`, a bot named "Mr. Randomness" with that will post messages to the "random" channel when reacted to with the "laughing" emoji would look like this.
+
+```go
+"laughing": {
+  Name:         "Randomness",
+  BotName:      "Mr. Randomness",
+  BotIconEmoji: ":joy:",
+  Channel:      "random",
+},
+```
+
 ## Running locally
 
 ### Setting up your local environment
