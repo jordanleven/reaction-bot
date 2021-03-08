@@ -1,32 +1,18 @@
-package internal
+package reactionbot
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/fatih/color"
-	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
 )
 
-func getSlackInstance() *slack.Client {
-	slackTokenBot := GetSlackTokenBot()
-	slackTokenApp := GetSlackTokenApp()
-	return slack.New(
-		slackTokenBot,
-		slack.OptionDebug(false),
-		slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
-		slack.OptionAppLevelToken(slackTokenApp),
-	)
-}
-
 // RegisterSlackBot is the function used to start the bot and listen for reactions
-func RegisterSlackBot() {
-	slackInstance := getSlackInstance()
-	slackUsers := GetSlackWorkspaceUsers(slackInstance)
-	client := socketmode.New(slackInstance)
+func RegisterSlackBot(bot ReactionBot) {
+
+	client := socketmode.New(bot.Slack)
 
 	go func() {
 		for evt := range client.Events {
@@ -46,8 +32,8 @@ func RegisterSlackBot() {
 				if innerEvent.Type == slackevents.ReactionAdded {
 					reactionAddedEvent := innerEvent.Data.(*slackevents.ReactionAddedEvent)
 					reactionEmoji := reactionAddedEvent.Reaction
-					if ReactionIsRegistered(reactionEmoji) {
-						PostReactedMessageToChannel(slackInstance, slackUsers, reactionAddedEvent)
+					if bot.ReactionIsRegistered(reactionEmoji) {
+						bot.PostReactedMessageToChannel(reactionAddedEvent)
 					}
 				}
 

@@ -1,4 +1,4 @@
-package internal
+package reactionbot
 
 import (
 	"fmt"
@@ -14,6 +14,9 @@ type SlackUser struct {
 	ProfileImage string
 }
 
+// SlackUsers is a key/value ordered list of users by their UUID
+type SlackUsers map[string]SlackUser
+
 func userIsInactive(user slack.User) bool {
 	// Don't include bots or deleted users in our list of users
 	return user.IsBot ||
@@ -21,19 +24,19 @@ func userIsInactive(user slack.User) bool {
 }
 
 // GetUserByUserID is a function to return a specific user given a user ID
-func GetUserByUserID(users map[string]SlackUser, userID string) SlackUser {
+func GetUserByUserID(users SlackUsers, userID string) SlackUser {
 	return users[userID]
 }
 
 // GetSlackWorkspaceUsers is a function to return all
 // users of the workspace
-func GetSlackWorkspaceUsers(slackInstance *slack.Client) map[string]SlackUser {
+func GetSlackWorkspaceUsers(slackInstance *slack.Client) SlackUsers {
 	users, err := slackInstance.GetUsers()
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 
-	userDictionary := make(map[string]SlackUser)
+	userDictionary := make(SlackUsers)
 	for _, user := range users {
 		// Don't include bots or deleted users in our list of users
 		if userIsInactive(user) {

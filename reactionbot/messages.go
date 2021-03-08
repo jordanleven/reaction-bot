@@ -1,4 +1,4 @@
-package internal
+package reactionbot
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func messageIsReactedMessage(emoji string, timestamp string, message slack.Messa
 	return messageTimestamp == timestamp && messageHasCorrectReaction
 }
 
-func getReactedMessage(slackInstance *slack.Client, reactionEmoji string, reactionItem slackevents.Item) slack.Message {
+func (bot ReactionBot) getReactedMessage(reactionEmoji string, reactionItem slackevents.Item) slack.Message {
 	var reactedMessage slack.Message
 	timestamp := reactionItem.Timestamp
 	channelID := reactionItem.Channel
@@ -35,7 +35,7 @@ func getReactedMessage(slackInstance *slack.Client, reactionEmoji string, reacti
 		// Required to show messages that are at the limit of the timestamp
 		Inclusive: true,
 	}
-	conversationHistory, _, _, _ := slackInstance.GetConversationReplies(&payload)
+	conversationHistory, _, _, _ := bot.Slack.GetConversationReplies(&payload)
 
 	messageTextFound := false
 	conversationHistoryLength := len(conversationHistory)
@@ -53,18 +53,19 @@ func getReactedMessage(slackInstance *slack.Client, reactionEmoji string, reacti
 }
 
 // PostReactedMessageToChannel is the function used to post a reaction
-func PostReactedMessageToChannel(slackInstance *slack.Client, allUsers map[string]SlackUser, reactionEvent *slackevents.ReactionAddedEvent) {
+func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.ReactionAddedEvent) {
+	allUsers := bot.Users
 	reactedByUser := GetUserByUserID(allUsers, reactionEvent.User)
 	reactedByName := reactedByUser.DisplayName
 	reactedToUser := GetUserByUserID(allUsers, reactionEvent.ItemUser)
 	reactedToName := reactedToUser.Username
 
 	reactionEmoji := reactionEvent.Reaction
-	registeredReaction := GetRegisteredReaction(reactionEmoji)
+	registeredReaction := bot.GetRegisteredReaction(reactionEmoji)
 	channelToPostReaction := registeredReaction.Channel
 	reactionType := registeredReaction.Name
 	reactionItem := reactionEvent.Item
-	reactedMessage := getReactedMessage(slackInstance, reactionEmoji, reactionItem)
+	reactedMessage := bot.getReactedMessage(reactionEmoji, reactionItem)
 	reactedMessageText := reactedMessage.Text
 	reactedMessageFiles := reactedMessage.Files
 	reactionAttachments := slack.Attachment{}
@@ -88,7 +89,7 @@ func PostReactedMessageToChannel(slackInstance *slack.Client, allUsers map[strin
 		slack.NewSectionBlock(reactedMessageBlock, nil, nil),
 	}
 
-	_, _, err := slackInstance.PostMessage(
+	_, _, err := bot.Slack.PostMessage(
 		channelToPostReaction,
 		slack.MsgOptionBlocks(blocks...),
 		slack.MsgOptionAttachments(reactionAttachments),
