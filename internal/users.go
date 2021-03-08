@@ -37,7 +37,7 @@ func GetSlackWorkspaceUsers(slackInstance *slack.Client) map[string]SlackUser {
 	for _, user := range users {
 		// Don't include bots or deleted users in our list of users
 		if userIsInactive(user) {
-			break
+			continue
 		}
 		userDictionary[user.ID] = SlackUser{
 			Username:     user.Name,
