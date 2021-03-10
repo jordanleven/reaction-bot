@@ -3,16 +3,20 @@ package reactionbot
 import (
 	"log"
 	"os"
+	"time"
 
+	"github.com/fatih/color"
 	"github.com/slack-go/slack"
 )
+
+const refreshIntervalInHours = 4
 
 // ReactionBot is our main structure
 type ReactionBot struct {
 	Slack           *slack.Client
 	IsDevelopment   bool
 	RegisteredEmoji RegisteredReactions
-	Users           SlackUsers
+	Users           *SlackUsers
 }
 
 // RegistrationOptions the list of options to init the package
@@ -31,6 +35,17 @@ func getSlackInstance(options RegistrationOptions) *slack.Client {
 	)
 }
 
+func (bot *ReactionBot) setUpdateTicker() {
+	ticker := time.NewTicker(time.Hour * refreshIntervalInHours)
+	go func() {
+		for range ticker.C {
+			color.White("Updating users...")
+			slackUsers := GetSlackWorkspaceUsers(bot.Slack)
+			*bot.Users = *slackUsers
+		}
+	}()
+}
+
 func getReactionBot(options RegistrationOptions) ReactionBot {
 	slack := getSlackInstance(options)
 	slackUsers := GetSlackWorkspaceUsers(slack)
@@ -40,11 +55,13 @@ func getReactionBot(options RegistrationOptions) ReactionBot {
 		RegisteredEmoji: options.RegisteredEmoji,
 		Users:           slackUsers,
 	}
+
 	return bot
 }
 
 // New function to init the package
 func New(options RegistrationOptions) {
 	bot := getReactionBot(options)
-	RegisterSlackBot(bot)
+	go bot.setUpdateTicker()
+	bot.RegisterSlackBot()
 }

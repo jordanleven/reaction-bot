@@ -30,7 +30,7 @@ func GetUserByUserID(users SlackUsers, userID string) SlackUser {
 
 // GetSlackWorkspaceUsers is a function to return all
 // users of the workspace
-func GetSlackWorkspaceUsers(slackInstance *slack.Client) SlackUsers {
+func GetSlackWorkspaceUsers(slackInstance *slack.Client) *SlackUsers {
 	users, err := slackInstance.GetUsers()
 	if err != nil {
 		fmt.Printf("%s\n", err)
@@ -50,5 +50,5 @@ func GetSlackWorkspaceUsers(slackInstance *slack.Client) SlackUsers {
 		}
 	}
 
-	return userDictionary
+	return &userDictionary
 }

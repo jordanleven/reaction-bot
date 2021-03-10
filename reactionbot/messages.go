@@ -86,9 +86,9 @@ func getReactionItem(reactionEvent *slackevents.ReactionAddedEvent) slackevents.
 // PostReactedMessageToChannel is the function used to post a reaction
 func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.ReactionAddedEvent) (channelID string, timetamp string, error error) {
 	allUsers := bot.Users
-	reactedByUser := GetUserByUserID(allUsers, reactionEvent.User)
+	reactedByUser := GetUserByUserID(*allUsers, reactionEvent.User)
 	reactedByName := reactedByUser.DisplayName
-	reactedToUser := GetUserByUserID(allUsers, reactionEvent.ItemUser)
+	reactedToUser := GetUserByUserID(*allUsers, reactionEvent.ItemUser)
 	reactedToName := reactedToUser.Username
 
 	reactionEmoji := getReactionEmoji(reactionEvent)

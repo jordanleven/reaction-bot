@@ -10,7 +10,7 @@ import (
 )
 
 // RegisterSlackBot is the function used to start the bot and listen for reactions
-func RegisterSlackBot(bot ReactionBot) {
+func (bot ReactionBot) RegisterSlackBot() {
 
 	client := socketmode.New(bot.Slack)
 
