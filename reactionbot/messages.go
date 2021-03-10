@@ -3,8 +3,15 @@ package reactionbot
 import (
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/fatih/color"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
+)
+
+const (
+	//SlackErrorMessageContent the error message from slack when the content is unavailable
+	SlackErrorMessageContent string = "This content can't be displayed."
 )
 
 func getFormattedMessage(reactedTo string, reactedMessage string) string {
@@ -69,6 +76,14 @@ func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.Re
 	reactedMessageText := reactedMessage.Text
 	reactedMessageFiles := reactedMessage.Files
 	reactionAttachments := slack.Attachment{}
+
+	if reactedMessageText == SlackErrorMessageContent {
+		color.Red("Unable to retrieve message for %s reaction to %s's message (dated %s).\n", reactionType, reactedToUser, reactedMessage.Timestamp)
+		color.Red("Message data is posted below\n")
+		spew.Dump(reactedMessage)
+		return
+	}
+
 	if len(reactedMessageFiles) > 0 {
 		// In case someone decides to add a bunch of photos, we're going to limit them to one
 		firstReactedFile := reactedMessage.Files[0]
@@ -83,8 +98,8 @@ func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.Re
 	}
 
 	reactedMessageTextFormatted := getFormattedMessage(reactedToName, reactedMessageText)
+	reactedMessageBlock := slack.NewTextBlockObject(slack.MarkdownType, reactedMessageTextFormatted, false, false)
 
-	reactedMessageBlock := slack.NewTextBlockObject("mrkdwn", reactedMessageTextFormatted, false, false)
 	blocks := []slack.Block{
 		slack.NewSectionBlock(reactedMessageBlock, nil, nil),
 	}
@@ -92,6 +107,8 @@ func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.Re
 	_, _, err := bot.Slack.PostMessage(
 		channelToPostReaction,
 		slack.MsgOptionBlocks(blocks...),
+		// Fallback text
+		slack.MsgOptionText(reactedMessageTextFormatted, true),
 		slack.MsgOptionAttachments(reactionAttachments),
 		slack.MsgOptionAsUser(false),
 		slack.MsgOptionIconURL(reactedByUser.ProfileImage),
@@ -100,8 +117,9 @@ func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.Re
 	)
 
 	if err != nil {
-		fmt.Printf("%s\n", err)
+		color.Red("Error posting message to Slack: %s\n", err)
 		return
 	}
-	fmt.Printf("Successfully sent a \"%s\" reaction to the %s channel.\n", reactionType, channelToPostReaction)
+
+	color.Green("Successfully sent a \"%s\" reaction to the %s channel.\n", reactionType, channelToPostReaction)
 }
