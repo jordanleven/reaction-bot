@@ -18,6 +18,18 @@ func getFormattedMessage(reactedTo string, reactedMessage string) string {
 	return fmt.Sprintf("\"%s\" \n- @%s", reactedMessage, reactedTo)
 }
 
+func getNumberOfMessageReactions(message slack.Message, reactionEmoji string) int {
+	reactions := message.Reactions
+	reactionCount := 0
+	for _, reaction := range reactions {
+		messageEmoji := reaction.Name
+		if messageEmoji == reactionEmoji {
+			reactionCount = reaction.Count
+		}
+	}
+	return reactionCount
+}
+
 func messageIsReactedMessage(emoji string, timestamp string, message slack.Message) bool {
 	messageHasCorrectReaction := false
 	messageTimestamp := message.Timestamp
@@ -59,26 +71,38 @@ func (bot ReactionBot) getReactedMessage(reactionEmoji string, reactionItem slac
 	return reactedMessage
 }
 
+func getReactionEmoji(reactionEvent *slackevents.ReactionAddedEvent) string {
+	return reactionEvent.Reaction
+}
+
+func getReactionType(registeredReaction Reaction) string {
+	return registeredReaction.Name
+}
+
+func getReactionItem(reactionEvent *slackevents.ReactionAddedEvent) slackevents.Item {
+	return reactionEvent.Item
+}
+
 // PostReactedMessageToChannel is the function used to post a reaction
-func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.ReactionAddedEvent) {
+func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.ReactionAddedEvent) (channelID string, timetamp string, error error) {
 	allUsers := bot.Users
 	reactedByUser := GetUserByUserID(allUsers, reactionEvent.User)
 	reactedByName := reactedByUser.DisplayName
 	reactedToUser := GetUserByUserID(allUsers, reactionEvent.ItemUser)
 	reactedToName := reactedToUser.Username
 
-	reactionEmoji := reactionEvent.Reaction
+	reactionEmoji := getReactionEmoji(reactionEvent)
 	registeredReaction := bot.GetRegisteredReaction(reactionEmoji)
+	reactionType := getReactionType(registeredReaction)
 	channelToPostReaction := registeredReaction.Channel
-	reactionType := registeredReaction.Name
-	reactionItem := reactionEvent.Item
+	reactionItem := getReactionItem(reactionEvent)
 	reactedMessage := bot.getReactedMessage(reactionEmoji, reactionItem)
 	reactedMessageText := reactedMessage.Text
 	reactedMessageFiles := reactedMessage.Files
 	reactionAttachments := slack.Attachment{}
 
 	if reactedMessageText == SlackErrorMessageContent {
-		color.Red("Unable to retrieve message for %s reaction to %s's message (dated %s).\n", reactionType, reactedToUser, reactedMessage.Timestamp)
+		color.Red("Unable to retrieve message for %s reaction to message (dated %s).\n", reactionType, reactedMessage.Timestamp)
 		color.Red("Message data is posted below\n")
 		spew.Dump(reactedMessage)
 		return
@@ -104,7 +128,7 @@ func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.Re
 		slack.NewSectionBlock(reactedMessageBlock, nil, nil),
 	}
 
-	_, _, err := bot.Slack.PostMessage(
+	return bot.Slack.PostMessage(
 		channelToPostReaction,
 		slack.MsgOptionBlocks(blocks...),
 		// Fallback text
@@ -115,11 +139,37 @@ func (bot ReactionBot) PostReactedMessageToChannel(reactionEvent *slackevents.Re
 		slack.MsgOptionParse(true),
 		slack.MsgOptionUsername(reactedByName),
 	)
+}
+
+// HandleMessageReaction is the function used to handle reactions to a message
+func (bot ReactionBot) HandleMessageReaction(reactionEvent *slackevents.ReactionAddedEvent) {
+	reactionEmoji := getReactionEmoji(reactionEvent)
+	registeredReaction := bot.GetRegisteredReaction(reactionEmoji)
+	reactionType := getReactionType(registeredReaction)
+	reactionItem := getReactionItem(reactionEvent)
+	reactedMessage := bot.getReactedMessage(reactionEmoji, reactionItem)
+	reactedMessageText := reactedMessage.Text
+	count := getNumberOfMessageReactions(reactedMessage, reactionEmoji)
+
+	// If the count is larger than one, then reaction to this specific emoji has already happened and
+	// we should avoid re-posting
+	if count > 1 {
+		return
+	}
+
+	if reactedMessageText == SlackErrorMessageContent {
+		color.Red("Unable to retrieve message for %s reaction to message (dated %s).\n", reactionType, reactedMessage.Timestamp)
+		color.Red("Message data is posted below\n")
+		spew.Dump(reactedMessage)
+		return
+	}
+
+	channel, _, err := bot.PostReactedMessageToChannel(reactionEvent)
 
 	if err != nil {
 		color.Red("Error posting message to Slack: %s\n", err)
 		return
 	}
 
-	color.Green("Successfully sent a \"%s\" reaction to the %s channel.\n", reactionType, channelToPostReaction)
+	color.Green("Successfully sent a \"%s\" reaction to the %s channel.\n", reactionType, channel)
 }

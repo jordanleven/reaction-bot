@@ -33,7 +33,7 @@ func RegisterSlackBot(bot ReactionBot) {
 					reactionAddedEvent := innerEvent.Data.(*slackevents.ReactionAddedEvent)
 					reactionEmoji := reactionAddedEvent.Reaction
 					if bot.ReactionIsRegistered(reactionEmoji) {
-						bot.PostReactedMessageToChannel(reactionAddedEvent)
+						bot.HandleMessageReaction(reactionAddedEvent)
 					}
 				}
 
