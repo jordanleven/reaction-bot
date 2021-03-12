@@ -11,20 +11,17 @@ type Reaction struct {
 // RegisteredReactions are the registered reactions
 type RegisteredReactions map[string]Reaction
 
-func (bot ReactionBot) getRegisteredReactionByEmoji(emoji string) (Reaction, bool) {
-
-	registeredReaction, registeredReactionWasFound := bot.RegisteredEmoji[emoji]
+func (b reactionBot) getRegisteredReactionByEmoji(emoji string) (Reaction, bool) {
+	registeredReaction, registeredReactionWasFound := b.RegisteredEmoji[emoji]
 	return registeredReaction, registeredReactionWasFound
 }
 
-// GetRegisteredReaction returns true if the reaction emoji has been registered
-func (bot ReactionBot) GetRegisteredReaction(emoji string) Reaction {
-	reaction, _ := bot.getRegisteredReactionByEmoji(emoji)
+func (b reactionBot) getRegisteredReaction(emoji string) Reaction {
+	reaction, _ := b.getRegisteredReactionByEmoji(emoji)
 	return reaction
 }
 
-// ReactionIsRegistered returns true if the reaction emoji has been registered
-func (bot ReactionBot) ReactionIsRegistered(emoji string) bool {
-	_, reactionWasFound := bot.getRegisteredReactionByEmoji(emoji)
+func (b reactionBot) reactionIsRegistered(emoji string) bool {
+	_, reactionWasFound := b.getRegisteredReactionByEmoji(emoji)
 	return reactionWasFound
 }

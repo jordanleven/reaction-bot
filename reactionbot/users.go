@@ -1,54 +1,60 @@
 package reactionbot
 
 import (
-	"fmt"
-
-	"github.com/slack-go/slack"
+	"github.com/fatih/color"
 )
 
-// SlackUser is any current user of this Slack workspace
-type SlackUser struct {
+type User struct {
 	Username     string
 	FullName     string
 	DisplayName  string
 	ProfileImage string
+	IsBot        bool
 }
 
-// SlackUsers is a key/value ordered list of users by their UUID
-type SlackUsers map[string]SlackUser
+type Users map[string]User
 
-func userIsInactive(user slack.User) bool {
-	// Don't include bots or deleted users in our list of users
-	return user.IsBot ||
-		user.Deleted
+func userIsInactive(user SlackUser) bool {
+	// Don't include Deleted users in our list (since it's unlikely users are
+	// reacting to messages that are from now-deleted users)
+	return user.Deleted
 }
 
-// GetUserByUserID is a function to return a specific user given a user ID
-func GetUserByUserID(users SlackUsers, userID string) SlackUser {
-	return users[userID]
+func getUserByUserID(u Users, uid string) User {
+	return u[uid]
 }
 
-// GetSlackWorkspaceUsers is a function to return all
-// users of the workspace
-func GetSlackWorkspaceUsers(slackInstance *slack.Client) *SlackUsers {
-	users, err := slackInstance.GetUsers()
-	if err != nil {
-		fmt.Printf("%s\n", err)
+func getFormattedUser(user SlackUser) User {
+	return User{
+		IsBot:        user.IsBot,
+		Username:     user.Name,
+		FullName:     user.RealName,
+		DisplayName:  user.Profile.DisplayNameNormalized,
+		ProfileImage: user.Profile.Image512,
 	}
+}
 
-	userDictionary := make(SlackUsers)
-	for _, user := range users {
-		// Don't include bots or deleted users in our list of users
-		if userIsInactive(user) {
+func getFormattedUsers(users []SlackUser) Users {
+	userDictionary := make(Users)
+	for _, u := range users {
+		if userIsInactive(u) {
 			continue
 		}
-		userDictionary[user.ID] = SlackUser{
-			Username:     user.Name,
-			FullName:     user.RealName,
-			DisplayName:  user.Profile.DisplayNameNormalized,
-			ProfileImage: user.Profile.Image512,
-		}
+		userDictionary[u.ID] = getFormattedUser(u)
+	}
+	return userDictionary
+}
+
+func (r reactionBot) getUsers() Users {
+	users, err := r.getSlackUsers()
+	if err != nil {
+		color.Red("Error getting users: %s\n", err)
 	}
 
-	return &userDictionary
+	formattedUsers := getFormattedUsers(users)
+	return formattedUsers
+}
+
+func (r *reactionBot) updateUsers() {
+	*r.Users = r.getUsers()
 }

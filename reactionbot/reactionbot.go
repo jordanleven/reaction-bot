@@ -11,12 +11,12 @@ import (
 
 const refreshIntervalInHours = 4
 
-// ReactionBot is our main structure
-type ReactionBot struct {
+type reactionBot struct {
 	Slack           *slack.Client
+	SlackClient     *SlackClient
 	IsDevelopment   bool
 	RegisteredEmoji RegisteredReactions
-	Users           *SlackUsers
+	Users           *Users
 }
 
 // RegistrationOptions the list of options to init the package
@@ -35,33 +35,35 @@ func getSlackInstance(options RegistrationOptions) *slack.Client {
 	)
 }
 
-func (bot *ReactionBot) setUpdateTicker() {
+func (b *reactionBot) handleUpdateUsers() {
 	ticker := time.NewTicker(time.Hour * refreshIntervalInHours)
 	go func() {
 		for range ticker.C {
 			color.White("Updating users...")
-			slackUsers := GetSlackWorkspaceUsers(bot.Slack)
-			*bot.Users = *slackUsers
+			b.updateUsers()
 		}
 	}()
 }
 
-func getReactionBot(options RegistrationOptions) ReactionBot {
+func getReactionBot(options RegistrationOptions) reactionBot {
 	slack := getSlackInstance(options)
-	slackUsers := GetSlackWorkspaceUsers(slack)
+	slackClient := newSlackClient(options)
 
-	bot := ReactionBot{
+	b := reactionBot{
 		Slack:           slack,
+		SlackClient:     slackClient,
 		RegisteredEmoji: options.RegisteredEmoji,
-		Users:           slackUsers,
+		Users:           &Users{},
 	}
 
-	return bot
+	b.updateUsers()
+
+	return b
 }
 
 // New function to init the package
 func New(options RegistrationOptions) {
 	bot := getReactionBot(options)
-	go bot.setUpdateTicker()
-	bot.RegisterSlackBot()
+	go bot.handleUpdateUsers()
+	defer bot.handleEvents()
 }
