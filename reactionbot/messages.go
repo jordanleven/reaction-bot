@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/jordanleven/reaction-bot/internal/slackclient"
 )
 
 //SlackErrorMessageContent the error message from slack when the content is unavailable
@@ -18,7 +19,7 @@ func getFormattedMessage(reactedTo string, reactedMessage string) string {
 	return fmt.Sprintf("\"%s\" %s", reactedMessage, attribution)
 }
 
-func (r reactionBot) postReactedMessageToChannel(channel string, event ReactionEvent) (timetamp string, error error) {
+func (r reactionBot) postReactedMessageToChannel(channel string, event slackclient.ReactionEvent) (timetamp string, error error) {
 	allUsers := r.Users
 	reactedByUser := getUserByUserID(*allUsers, event.UserIDReactedBy)
 	reactedToUser := getUserByUserID(*allUsers, event.UserIDReactedTo)
@@ -35,15 +36,15 @@ func (r reactionBot) postReactedMessageToChannel(channel string, event ReactionE
 		}
 	}
 
-	opts := SlackPostMessageOptions{
+	opts := slackclient.SlackPostMessageOptions{
 		ReactedByUser: reactedByUser,
 		Attachment:    event.MessageAttachment,
 		Message:       reactedMessageFormatted,
 	}
-	return r.postSlackMessage(channel, opts)
+	return slackclient.PostSlackMessage(r.SlackClient, channel, opts)
 }
 
-func (r reactionBot) maybePostReactedMessageToChannel(event ReactionEvent) {
+func (r reactionBot) maybePostReactedMessageToChannel(event slackclient.ReactionEvent) {
 	registeredReaction := r.getRegisteredReaction(event.ReactionEmoji)
 	reactionName := registeredReaction.Name
 	reactionChannel := registeredReaction.Channel
