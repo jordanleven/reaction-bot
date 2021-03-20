@@ -1,30 +1,17 @@
 package reactionbot
 
-type ReactionAttachment struct {
-	Permalink string
-	Name      string
-}
+import "github.com/jordanleven/reaction-bot/internal/slackclient"
 
-type ReactionEvent struct {
-	ReactionEmoji     string
-	ReactionTimestamp string
-	ReactionCount     int
-	Message           string
-	MessageAttachment *ReactionAttachment
-	UserIDReactedTo   string
-	UserIDReactedBy   string
-}
-
-func (r reactionBot) messageShouldBePosted(event ReactionEvent) bool {
+func (r reactionBot) messageShouldBePosted(event slackclient.ReactionEvent) bool {
 	return r.reactionIsRegistered(event.ReactionEmoji) && event.ReactionCount == 1
 }
 
-func (r reactionBot) handleReaction(event ReactionEvent) {
+func (r reactionBot) handleReaction(event slackclient.ReactionEvent) {
 	if r.messageShouldBePosted(event) {
 		r.maybePostReactedMessageToChannel(event)
 	}
 }
 
 func (r reactionBot) handleEvents() {
-	r.handleSlackEvents(r.handleReaction)
+	slackclient.HandleSlackEvents(r.SlackClient, r.handleReaction)
 }

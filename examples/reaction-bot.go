@@ -5,9 +5,9 @@ import (
 )
 
 var registeredReactions = reactionbot.RegisteredReactions{
-	"raised_hands": {
+	"robot_face": {
 		Name:    "Reaction Bot Testing",
-		Channel: "til",
+		Channel: "reaction-bot-testing",
 	},
 }
 
