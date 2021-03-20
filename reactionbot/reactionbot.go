@@ -1,22 +1,19 @@
 package reactionbot
 
 import (
-	"log"
-	"os"
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/slack-go/slack"
+	"github.com/jordanleven/reaction-bot/internal/slackclient"
 )
 
 const refreshIntervalInHours = 4
 
 type reactionBot struct {
-	Slack           *slack.Client
-	SlackClient     *SlackClient
+	SlackClient     *slackclient.SlackClient
 	IsDevelopment   bool
 	RegisteredEmoji RegisteredReactions
-	Users           *Users
+	Users           *slackclient.Users
 }
 
 // RegistrationOptions the list of options to init the package
@@ -24,15 +21,6 @@ type RegistrationOptions struct {
 	SlackTokenApp   string
 	SlackTokenBot   string
 	RegisteredEmoji RegisteredReactions
-}
-
-func getSlackInstance(options RegistrationOptions) *slack.Client {
-	return slack.New(
-		options.SlackTokenBot,
-		slack.OptionDebug(false),
-		slack.OptionLog(log.New(os.Stdout, "api: ", log.Lshortfile|log.LstdFlags)),
-		slack.OptionAppLevelToken(options.SlackTokenApp),
-	)
 }
 
 func (b *reactionBot) handleUpdateUsers() {
@@ -46,14 +34,15 @@ func (b *reactionBot) handleUpdateUsers() {
 }
 
 func getReactionBot(options RegistrationOptions) reactionBot {
-	slack := getSlackInstance(options)
-	slackClient := newSlackClient(options)
+	slackClient := slackclient.NewClient(
+		options.SlackTokenBot,
+		options.SlackTokenApp,
+	)
 
 	b := reactionBot{
-		Slack:           slack,
 		SlackClient:     slackClient,
 		RegisteredEmoji: options.RegisteredEmoji,
-		Users:           &Users{},
+		Users:           &slackclient.Users{},
 	}
 
 	b.updateUsers()

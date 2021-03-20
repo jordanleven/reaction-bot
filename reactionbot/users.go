@@ -2,57 +2,20 @@ package reactionbot
 
 import (
 	"github.com/fatih/color"
+	"github.com/jordanleven/reaction-bot/internal/slackclient"
 )
 
-type User struct {
-	Username     string
-	FullName     string
-	DisplayName  string
-	ProfileImage string
-	IsBot        bool
-}
-
-type Users map[string]User
-
-func userIsInactive(user SlackUser) bool {
-	// Don't include Deleted users in our list (since it's unlikely users are
-	// reacting to messages that are from now-deleted users)
-	return user.Deleted
-}
-
-func getUserByUserID(u Users, uid string) User {
+func getUserByUserID(u slackclient.Users, uid string) slackclient.User {
 	return u[uid]
 }
 
-func getFormattedUser(user SlackUser) User {
-	return User{
-		IsBot:        user.IsBot,
-		Username:     user.Name,
-		FullName:     user.RealName,
-		DisplayName:  user.Profile.DisplayNameNormalized,
-		ProfileImage: user.Profile.Image512,
-	}
-}
-
-func getFormattedUsers(users []SlackUser) Users {
-	userDictionary := make(Users)
-	for _, u := range users {
-		if userIsInactive(u) {
-			continue
-		}
-		userDictionary[u.ID] = getFormattedUser(u)
-	}
-	return userDictionary
-}
-
-func (r reactionBot) getUsers() Users {
-	users, err := r.getSlackUsers()
+func (r reactionBot) getUsers() slackclient.Users {
+	users, err := slackclient.GetSlackUsers(r.SlackClient)
 	if err != nil {
 		color.Red("Error getting users: %s\n", err)
 	}
 
-	formattedUsers := getFormattedUsers(users)
-	return formattedUsers
+	return users
 }
 
 func (r *reactionBot) updateUsers() {

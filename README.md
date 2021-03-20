@@ -7,7 +7,13 @@ A simple bot that can listen for reactions with specific emoji in Slack.
 To install this package in your existing Go project, run:
 
 ```sh
-go get github.com/jordanleven/reaction-bot
+go get -u github.com/jordanleven/reaction-bot
+```
+
+Then install additional dependences:
+
+```sh
+go get -t
 ```
 
 Import into your file:
