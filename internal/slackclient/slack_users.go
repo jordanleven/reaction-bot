@@ -26,7 +26,7 @@ func getFormattedUser(user SlackUser) User {
 		Username:     user.Name,
 		FullName:     user.RealName,
 		DisplayName:  user.Profile.DisplayNameNormalized,
-		ProfileImage: user.Profile.Image512,
+		ProfileImage: user.Profile.Image192,
 	}
 }
 
