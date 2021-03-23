@@ -135,6 +135,12 @@ func (r reactionBot) handleSlackEvents(callback func(ReactionEvent)) {
 				color.Green("Connected to Slack with Socket Mode.")
 			case socketmode.EventTypeHello:
 				color.Green("Well hello there! Reaction Bot has finish starting up.")
+				connections := evt.Request.NumConnections
+				if connections > 1 {
+					color.Red("Warning! Current socket connected exceed one (%d)", connections)
+					os.Exit(1)
+					return
+				}
 			case socketmode.EventTypeEventsAPI:
 				client.Ack(*evt.Request)
 				go func() {
@@ -149,7 +155,6 @@ func (r reactionBot) handleSlackEvents(callback func(ReactionEvent)) {
 			}
 		}
 	}()
-
 	client.Run()
 }
 
