@@ -137,11 +137,13 @@ func (r reactionBot) handleSlackEvents(callback func(ReactionEvent)) {
 				color.Green("Well hello there! Reaction Bot has finish starting up.")
 			case socketmode.EventTypeEventsAPI:
 				client.Ack(*evt.Request)
-				innerEvent := getInnerEvent(evt)
-				if innerEvent.Type == slackevents.ReactionAdded {
-					event := r.getFormattedEvent(innerEvent)
-					callback(event)
-				}
+				go func() {
+					innerEvent := getInnerEvent(evt)
+					if innerEvent.Type == slackevents.ReactionAdded {
+						event := r.getFormattedEvent(innerEvent)
+						callback(event)
+					}
+				}()
 			default:
 				fmt.Fprintf(os.Stderr, "Unexpected event type received: %s\n", evt.Type)
 			}
