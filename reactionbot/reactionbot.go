@@ -9,7 +9,7 @@ import (
 	"github.com/slack-go/slack"
 )
 
-const refreshIntervalInHours = 4
+const refreshIntervalInHours = 20
 
 type reactionBot struct {
 	Slack           *slack.Client
@@ -36,7 +36,7 @@ func getSlackInstance(options RegistrationOptions) *slack.Client {
 }
 
 func (b *reactionBot) handleUpdateUsers() {
-	ticker := time.NewTicker(time.Hour * refreshIntervalInHours)
+	ticker := time.NewTicker(time.Second * refreshIntervalInHours)
 	go func() {
 		for range ticker.C {
 			color.White("Updating users...")
