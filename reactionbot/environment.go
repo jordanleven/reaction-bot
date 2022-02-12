@@ -2,6 +2,7 @@ package reactionbot
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -13,7 +14,7 @@ func getEnvironmentalToken(variableName string, environmentalVariablePrefix stri
 
 	if !strings.HasPrefix(environmentalVariable, environmentalVariablePrefix) {
 		errorMessage := fmt.Sprintf("%s must have the prefix \"%s\".", variableName, environmentalVariablePrefix)
-		fmt.Fprintf(os.Stderr, errorMessage)
+		log.Fatal(errorMessage)
 	}
 	return environmentalVariable
 }
