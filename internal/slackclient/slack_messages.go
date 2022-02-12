@@ -93,3 +93,22 @@ func PostSlackMessage(client *SlackClient, channel string, opts SlackPostMessage
 
 	return ts, error
 }
+
+// PostSlackMessage allows posting messages to specific channels
+func SendDirectMessage(client *SlackClient, userId string, message string) (timestamp string, error error) {
+	reactedMessageBlock := slack.NewTextBlockObject(slack.MarkdownType, message, false, false)
+
+	blocks := []slack.Block{
+		slack.NewSectionBlock(reactedMessageBlock, nil, nil),
+	}
+
+	_, ts, error := client.PostMessage(
+		userId,
+		slack.MsgOptionBlocks(blocks...),
+		slack.MsgOptionText(message, true),
+		slack.MsgOptionAsUser(false),
+		slack.MsgOptionParse(true),
+	)
+
+	return ts, error
+}
