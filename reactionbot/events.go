@@ -52,7 +52,7 @@ func eventReactionMessageContainsDisallowedAttachmentType(event slackclient.Reac
 	return false
 }
 
-func (r reactionBot) eventReactionIsEligibleForPost(event slackclient.ReactionEvent) (bool, eventReactionStatus) {
+func (r *reactionBot) eventReactionIsEligibleForPost(event slackclient.ReactionEvent) (bool, eventReactionStatus) {
 	// User IDs will only exist for messages posted by real users
 	userIdDoesNotExist := event.UserIDReactedTo == ""
 	messageContainsDisallowedAttachment := eventReactionMessageContainsDisallowedAttachmentType(event)
@@ -71,7 +71,7 @@ func (r reactionBot) eventReactionIsEligibleForPost(event slackclient.ReactionEv
 	}
 }
 
-func (r reactionBot) eventReactionIsRegistered(event slackclient.ReactionEvent) bool {
+func (r *reactionBot) eventReactionIsRegistered(event slackclient.ReactionEvent) bool {
 	return r.reactionIsRegistered(event.ReactionEmoji)
 }
 
@@ -79,7 +79,7 @@ func eventReactionIsUnique(event slackclient.ReactionEvent) bool {
 	return event.ReactionCount == 1
 }
 
-func (r reactionBot) sentEventIneligibleMessageToUser(status eventReactionStatus, event slackclient.ReactionEvent) {
+func (r *reactionBot) sentEventIneligibleMessageToUser(status eventReactionStatus, event slackclient.ReactionEvent) {
 	allUsers := r.Users
 	reactedByUser := getUserByUserID(*allUsers, event.UserIDReactedBy)
 	var attachmentExtension string
@@ -103,7 +103,7 @@ func (r reactionBot) sentEventIneligibleMessageToUser(status eventReactionStatus
 	color.Yellow("Sent error message to %s. Message unable to reacted to (code %d). Original message was \"%s\". (dated %s).\n", reactedByUser.DisplayName, status, event.Message, event.ReactionTimestamp)
 }
 
-func (r reactionBot) handleReaction(event slackclient.ReactionEvent) {
+func (r *reactionBot) handleReaction(event slackclient.ReactionEvent) {
 	// Early exist if the reaction isn't something we need to deal with
 	if !r.eventReactionIsRegistered(event) || !eventReactionIsUnique(event) {
 		return
@@ -117,6 +117,6 @@ func (r reactionBot) handleReaction(event slackclient.ReactionEvent) {
 	}
 }
 
-func (r reactionBot) handleEvents() {
+func (r *reactionBot) handleEvents() {
 	slackclient.HandleSlackEvents(r.SlackClient, r.handleReaction)
 }

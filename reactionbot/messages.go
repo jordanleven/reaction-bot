@@ -19,7 +19,7 @@ func getFormattedMessage(reactedTo string, reactedMessage string) string {
 	return fmt.Sprintf("\"%s\" %s", reactedMessage, attribution)
 }
 
-func (r reactionBot) postReactedMessageToChannel(channel string, event slackclient.ReactionEvent) (timetamp string, error error) {
+func (r *reactionBot) postReactedMessageToChannel(channel string, event slackclient.ReactionEvent) (timetamp string, error error) {
 	allUsers := r.Users
 	reactedByUser := getUserByUserID(*allUsers, event.UserIDReactedBy)
 	reactedToUser := getUserByUserID(*allUsers, event.UserIDReactedTo)
@@ -44,7 +44,7 @@ func (r reactionBot) postReactedMessageToChannel(channel string, event slackclie
 	return slackclient.PostSlackMessage(r.SlackClient, channel, opts)
 }
 
-func (r reactionBot) maybePostReactedMessageToChannel(event slackclient.ReactionEvent) {
+func (r *reactionBot) maybePostReactedMessageToChannel(event slackclient.ReactionEvent) {
 	registeredReaction := r.getRegisteredReaction(event.ReactionEmoji)
 	reactionName := registeredReaction.Name
 	reactionChannel := registeredReaction.Channel

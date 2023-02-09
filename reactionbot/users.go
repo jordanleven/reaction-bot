@@ -9,7 +9,7 @@ func getUserByUserID(u slackclient.Users, uid string) slackclient.User {
 	return u[uid]
 }
 
-func (r reactionBot) getUsers() slackclient.Users {
+func (r *reactionBot) getUsers() slackclient.Users {
 	users, err := slackclient.GetSlackUsers(r.SlackClient)
 	if err != nil {
 		color.Red("Error getting users: %s\n", err)
